@@ -11,6 +11,52 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Parse will read a portfolio from an io.Reader.
+func Parse(r io.Reader) (*Portfolio, error) {
+	var spec portfolioSpec
+	if err := yaml.NewDecoder(r).Decode(&spec); err != nil {
+		return nil, err
+	}
+
+	p := &Portfolio{}
+
+	accountsMap := make(map[int]*Account)
+
+	for _, acc := range spec.Accounts {
+		accountsMap[acc.ID] = p.NewAccount(acc.Name)
+	}
+
+	for _, man := range spec.ManualAdjustments {
+		acc, ok := accountsMap[man.Account]
+		if !ok {
+			return nil, fmt.Errorf("invalid account: %d", man.Account)
+		}
+		p.NewManualAdjustment(acc, time.Time(man.Time), man.Balance)
+	}
+
+	for _, trans := range spec.ScheduledTransactions {
+		var from *Account
+		var to *Account
+		if trans.FromAccount != 0 {
+			var ok bool
+			from, ok = accountsMap[trans.FromAccount]
+			if !ok {
+				return nil, fmt.Errorf("invalid account: %d", trans.FromAccount)
+			}
+		}
+		if trans.ToAccount != 0 {
+			var ok bool
+			to, ok = accountsMap[trans.ToAccount]
+			if !ok {
+				return nil, fmt.Errorf("invalid account: %d", trans.ToAccount)
+			}
+		}
+		p.NewScheduledTransaction(from, to, trans.Description, trans.Frequency.inner, trans.Amount)
+	}
+
+	return p, nil
+}
+
 type portfolioSpec struct {
 	Accounts []struct {
 		ID   int    `yaml:"id"`
@@ -107,49 +153,4 @@ func (f *jsonFrequency) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		}
 	}
 	return fmt.Errorf("invalid frequency: %s", s)
-}
-
-func Parse(r io.Reader) (*Portfolio, error) {
-	var spec portfolioSpec
-	if err := yaml.NewDecoder(r).Decode(&spec); err != nil {
-		return nil, err
-	}
-
-	p := &Portfolio{}
-
-	accountsMap := make(map[int]*Account)
-
-	for _, acc := range spec.Accounts {
-		accountsMap[acc.ID] = p.NewAccount(acc.Name)
-	}
-
-	for _, man := range spec.ManualAdjustments {
-		acc, ok := accountsMap[man.Account]
-		if !ok {
-			return nil, fmt.Errorf("invalid account: %d", man.Account)
-		}
-		p.NewManualAdjustment(acc, time.Time(man.Time), man.Balance)
-	}
-
-	for _, trans := range spec.ScheduledTransactions {
-		var from *Account
-		var to *Account
-		if trans.FromAccount != 0 {
-			var ok bool
-			from, ok = accountsMap[trans.FromAccount]
-			if !ok {
-				return nil, fmt.Errorf("invalid account: %d", trans.FromAccount)
-			}
-		}
-		if trans.ToAccount != 0 {
-			var ok bool
-			to, ok = accountsMap[trans.ToAccount]
-			if !ok {
-				return nil, fmt.Errorf("invalid account: %d", trans.ToAccount)
-			}
-		}
-		p.NewScheduledTransaction(from, to, trans.Description, trans.Frequency.inner, trans.Amount)
-	}
-
-	return p, nil
 }

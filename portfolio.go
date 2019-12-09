@@ -5,12 +5,14 @@ import (
 	"time"
 )
 
+// Portfolio represents a person's financial portfolio.
 type Portfolio struct {
 	Accounts              []*Account
 	ScheduledTransactions []*ScheduledTransaction
 	ManualAdjustments     []*ManualAdjustment
 }
 
+// Project a portfolio's balances for a period of time.
 func (p *Portfolio) Project(from, to time.Time) {
 	// Set up initial balances
 	for _, adj := range p.ManualAdjustments {
@@ -46,6 +48,7 @@ func (p *Portfolio) Project(from, to time.Time) {
 	}
 }
 
+// NewAccount adds a new account to the portfolio.
 func (p *Portfolio) NewAccount(name string) *Account {
 	a := &Account{
 		Name:    name,
@@ -55,6 +58,8 @@ func (p *Portfolio) NewAccount(name string) *Account {
 	return a
 }
 
+// NewManualAdjustment adds a new manual adjustment to the portfolio.
+// It should be used to set the initial balance for an account or to log significant intended changes in the value of an account.
 func (p *Portfolio) NewManualAdjustment(acc *Account, t time.Time, balance float32) {
 	m := &ManualAdjustment{
 		Account: acc,
@@ -74,6 +79,7 @@ func (p *Portfolio) NewManualAdjustment(acc *Account, t time.Time, balance float
 	p.ManualAdjustments = newArr
 }
 
+// NewScheduledTransaction adds a new scheduled transaction to the portfolio.
 func (p *Portfolio) NewScheduledTransaction(from, to *Account, desc string, f Frequency, amt float32) *ScheduledTransaction {
 	t := &ScheduledTransaction{
 		Description: desc,
@@ -86,6 +92,7 @@ func (p *Portfolio) NewScheduledTransaction(from, to *Account, desc string, f Fr
 	return t
 }
 
+// ManualAdjustment is a single manual adjustment made on an account.
 type ManualAdjustment struct {
 	Account *Account
 	Time    time.Time
@@ -93,6 +100,7 @@ type ManualAdjustment struct {
 	applied bool
 }
 
+// Apply the manual adjustment.
 func (a *ManualAdjustment) Apply(now time.Time) bool {
 	if a.applied || now.Before(a.Time) {
 		return false
@@ -103,10 +111,12 @@ func (a *ManualAdjustment) Apply(now time.Time) bool {
 	return true
 }
 
+// Frequency determines the next time for a scheduled transaction to be applied, based on the last time it was applied.
 type Frequency interface {
 	Next(time.Time) time.Time
 }
 
+// Weekly frequency will run weekly on the given weekday.
 func Weekly(day time.Weekday) Frequency {
 	return weeklyFrequency{day}
 }
@@ -127,6 +137,7 @@ type monthlyFrequency struct {
 	day int
 }
 
+// Monthly frequency will run monthly on the given day of the month.
 func Monthly(day int) Frequency {
 	return monthlyFrequency{day}
 }
@@ -136,6 +147,9 @@ func (f monthlyFrequency) Next(t time.Time) time.Time {
 	return time.Date(year, month, f.day, 0, 0, 0, 0, time.Local)
 }
 
+// ScheduledTransaction is a scheduled transaction from one account to another on a set frequency.
+// If FromAccount or ToAccount is nil, this transaction represents money in/out of the portfolio (payments, income, etc.).
+// Otherwise it is a transfer between two accounts in the portfolio.
 type ScheduledTransaction struct {
 	Description string
 	Frequency   Frequency
@@ -145,6 +159,7 @@ type ScheduledTransaction struct {
 	lastApplied time.Time
 }
 
+// Apply the scheduled transaction.
 func (s *ScheduledTransaction) Apply(now time.Time) bool {
 	next := s.Frequency.Next(s.lastApplied)
 	if now.Before(next) {
@@ -164,6 +179,7 @@ func (s *ScheduledTransaction) Apply(now time.Time) bool {
 	return true
 }
 
+// Account is a named account with a balance.
 type Account struct {
 	Name    string
 	Balance float32
