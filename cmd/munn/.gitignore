@@ -1,4 +1,3 @@
-*.json
-*.yaml
-!example.json
-!example.yaml
+*.exe
+*[.json, .yaml]
+!example[.json, .yaml]
