@@ -22,11 +22,16 @@ func Parse(r io.Reader) (*Portfolio, error) {
 
 	accountsMap := make(map[int]*Account)
 
-	for _, acc := range spec.Accounts {
-		if _, ok := accountsMap[acc.ID]; ok {
-			return nil, fmt.Errorf("duplicate account ID: %d", acc.ID)
+	for _, accSpec := range spec.Accounts {
+		if _, ok := accountsMap[accSpec.ID]; ok {
+			return nil, fmt.Errorf("duplicate account ID: %d", accSpec.ID)
 		}
-		accountsMap[acc.ID] = p.NewAccount(acc.Name)
+		acc := p.NewAccount(accSpec.Name)
+		accountsMap[accSpec.ID] = acc
+
+		if accSpec.AnnualInterestRate != 0 {
+			acc.AnnualInterestRate = accSpec.AnnualInterestRate
+		}
 	}
 
 	for _, man := range spec.ManualAdjustments {
@@ -62,8 +67,9 @@ func Parse(r io.Reader) (*Portfolio, error) {
 
 type portfolioSpec struct {
 	Accounts []struct {
-		ID   int    `yaml:"id"`
-		Name string `yaml:"name"`
+		ID                 int     `yaml:"id"`
+		Name               string  `yaml:"name"`
+		AnnualInterestRate float32 `yaml:"annualInterestRate"`
 	}
 	ManualAdjustments []struct {
 		Account int     `yaml:"account"`

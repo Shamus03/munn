@@ -33,6 +33,12 @@ func (p *Portfolio) Project(from, to time.Time) {
 			}
 		}
 
+		for _, acc := range p.Accounts {
+			if acc.GainInterest(now) {
+				changed = true
+			}
+		}
+
 		for _, trans := range p.ScheduledTransactions {
 			if trans.Apply(now) {
 				changed = true
@@ -180,7 +186,25 @@ func (s *ScheduledTransaction) Apply(now time.Time) bool {
 }
 
 // Account is a named account with a balance.
+// An account may also have an annual interest rate which is applied monthly.
 type Account struct {
-	Name    string
-	Balance float32
+	Name               string
+	Balance            float32
+	AnnualInterestRate float32
+	lastInterest       time.Time
+}
+
+// GainInterest adds interest to the account.
+func (a *Account) GainInterest(now time.Time) bool {
+	f := Monthly(1)
+
+	if now.Before(f.Next(a.lastInterest)) {
+		return false
+	}
+
+	monthlyInterest := a.AnnualInterestRate / 12
+	a.Balance = a.Balance * (1 + monthlyInterest)
+
+	a.lastInterest = now
+	return true
 }

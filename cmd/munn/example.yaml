@@ -1,6 +1,7 @@
 accounts:
 - id: &bank 1
   name: Bank
+  annualInterestRate: 0.01
 - id: &savings 2
   name: Savings
 - id: &investment 3
