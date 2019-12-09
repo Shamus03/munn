@@ -59,7 +59,7 @@ func Parse(r io.Reader) (*Portfolio, error) {
 				return nil, fmt.Errorf("invalid account: %d", trans.ToAccount)
 			}
 		}
-		p.NewScheduledTransaction(from, to, trans.Description, trans.Frequency.inner, trans.Amount)
+		p.NewScheduledTransaction(from, to, trans.Description, trans.Frequency.parsed, trans.Amount)
 	}
 
 	return p, nil
@@ -109,19 +109,19 @@ func (l *laxTime) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 type jsonFrequency struct {
-	inner Frequency
+	parsed Frequency
 }
 
 var jsonFrequencyRegex = regexp.MustCompile(`(\w+)(\(.*\))?`)
 
 var daysOfWeek = map[string]time.Weekday{
-	"Sunday":    time.Sunday,
-	"Monday":    time.Monday,
-	"Tuesday":   time.Tuesday,
-	"Wednesday": time.Wednesday,
-	"Thursday":  time.Thursday,
-	"Friday":    time.Friday,
-	"Saturday":  time.Saturday,
+	"sunday":    time.Sunday,
+	"monday":    time.Monday,
+	"tuesday":   time.Tuesday,
+	"wednesday": time.Wednesday,
+	"thursday":  time.Thursday,
+	"friday":    time.Friday,
+	"saturday":  time.Saturday,
 }
 
 func (f *jsonFrequency) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -142,7 +142,7 @@ func (f *jsonFrequency) UnmarshalYAML(unmarshal func(interface{}) error) error {
 			day := time.Sunday
 			if len(args) > 0 {
 				var ok bool
-				if day, ok = daysOfWeek[args[0]]; !ok {
+				if day, ok = daysOfWeek[strings.ToLower(args[0])]; !ok {
 					return fmt.Errorf("invalid weekday: %s", args[0])
 				}
 			}
