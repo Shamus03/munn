@@ -23,6 +23,9 @@ func Parse(r io.Reader) (*Portfolio, error) {
 	accountsMap := make(map[int]*Account)
 
 	for _, acc := range spec.Accounts {
+		if _, ok := accountsMap[acc.ID]; ok {
+			return nil, fmt.Errorf("duplicate account ID: %d", acc.ID)
+		}
 		accountsMap[acc.ID] = p.NewAccount(acc.Name)
 	}
 
