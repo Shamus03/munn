@@ -1,2 +1,4 @@
 *.json
+*.yaml
 !example.json
+!example.yaml

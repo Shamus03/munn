@@ -1,0 +1,69 @@
+accounts:
+- id: &bank 1
+  name: Bank
+- id: &savings 2
+  name: Savings
+- id: &investment 3
+  name: Investment
+- id: &retirement 4
+  name: Retirement
+manualAdjustments:
+- account: *bank
+  time: '2019-12-08'
+  balance: 20
+- account: *savings
+  time: '2019-12-08'
+  balance: 30
+- account: *investment
+  time: '2019-12-08'
+  balance: 40
+- account: *retirement
+  time: '2019-12-08'
+  balance: 50
+scheduledTransactions:
+- toAccount: *bank
+  description: Paycheck
+  frequency: Weekly(Thursday)
+  amount: 1000
+- fromAccount: *bank
+  description: Avg. Income Tax
+  frequency: Weekly(Thursday)
+  amount: 50
+- fromAccount: *bank
+  description: Phone
+  frequency: Monthly
+  amount: 25
+- fromAccount: *bank
+  description: Rent
+  frequency: Monthly
+  amount: 1000
+- fromAccount: *bank
+  description: Spotify
+  frequency: Monthly
+  amount: 10.81
+- fromAccount: *bank
+  description: Credit Card
+  frequency: Monthly
+  amount: 1000
+- fromAccount: *bank
+  description: Internet
+  frequency: Monthly
+  amount: 50
+- fromAccount: *bank
+  description: Electric
+  frequency: Monthly
+  amount: 60
+- fromAccount: *bank
+  description: Auto/Renters Insurance
+  frequency: Monthly
+  amount: 100
+- fromAccount: *bank
+  toAccount: *savings
+  description: Auto Savings
+  frequency: Monthly(10)
+  amount: 100
+- fromAccount: *bank
+  toAccount: *retirement
+  description: Roth Investment
+  frequency: Monthly(10)
+  amount: 100

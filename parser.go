@@ -1,39 +1,40 @@
 package munn
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 type portfolioSpec struct {
 	Accounts []struct {
-		ID   int
-		Name string
+		ID   int    `yaml:"id"`
+		Name string `yaml:"name"`
 	}
 	ManualAdjustments []struct {
-		Account int
-		Time    laxTime
-		Balance float32
-	}
+		Account int     `yaml:"account"`
+		Time    laxTime `yaml:"time"`
+		Balance float32 `yaml:"balance"`
+	} `yaml:"manualAdjustments"`
 	ScheduledTransactions []struct {
-		FromAccount int
-		ToAccount   int
-		Description string
-		Amount      float32
-		Frequency   jsonFrequency
-	}
+		FromAccount int           `yaml:"fromAccount"`
+		ToAccount   int           `yaml:"toAccount"`
+		Description string        `yaml:"description"`
+		Amount      float32       `yaml:"amount"`
+		Frequency   jsonFrequency `yaml:"frequency"`
+	} `yaml:"scheduledTransactions"`
 }
 
 type laxTime time.Time
 
-func (l *laxTime) UnmarshalJSON(data []byte) error {
+func (l *laxTime) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
+	if err := unmarshal(&s); err != nil {
 		return err
 	}
 	formats := []string{
@@ -52,7 +53,9 @@ func (l *laxTime) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("failed to parse time as any of the valid formats: last error: %v", err)
 }
 
-type jsonFrequency struct{ Frequency }
+type jsonFrequency struct {
+	inner Frequency
+}
 
 var jsonFrequencyRegex = regexp.MustCompile(`(\w+)(\(.*\))?`)
 
@@ -66,9 +69,9 @@ var daysOfWeek = map[string]time.Weekday{
 	"Saturday":  time.Saturday,
 }
 
-func (f *jsonFrequency) UnmarshalJSON(data []byte) error {
+func (f *jsonFrequency) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
+	if err := unmarshal(&s); err != nil {
 		return err
 	}
 
@@ -76,7 +79,7 @@ func (f *jsonFrequency) UnmarshalJSON(data []byte) error {
 	if len(matches) > 1 {
 		var args []string
 		if len(matches) > 2 {
-			args = strings.Split(strings.Trim(matches[2], "()"), ",")
+			args = strings.Fields(strings.Trim(matches[2], "()"))
 		}
 
 		switch matches[1] {
@@ -108,7 +111,7 @@ func (f *jsonFrequency) UnmarshalJSON(data []byte) error {
 
 func Parse(r io.Reader) (*Portfolio, error) {
 	var spec portfolioSpec
-	if err := json.NewDecoder(r).Decode(&spec); err != nil {
+	if err := yaml.NewDecoder(r).Decode(&spec); err != nil {
 		return nil, err
 	}
 
@@ -145,7 +148,7 @@ func Parse(r io.Reader) (*Portfolio, error) {
 				return nil, fmt.Errorf("invalid account: %d", trans.ToAccount)
 			}
 		}
-		p.NewScheduledTransaction(from, to, trans.Description, trans.Frequency, trans.Amount)
+		p.NewScheduledTransaction(from, to, trans.Description, trans.Frequency.inner, trans.Amount)
 	}
 
 	return p, nil
