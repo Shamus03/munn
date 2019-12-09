@@ -112,7 +112,7 @@ type jsonFrequency struct {
 	parsed Frequency
 }
 
-var jsonFrequencyRegex = regexp.MustCompile(`(\w+)(\(.*\))?`)
+var jsonFrequencyRegex = regexp.MustCompile(`^(\w+)(\(.*\))?$`)
 
 var daysOfWeek = map[string]time.Weekday{
 	"sunday":    time.Sunday,
