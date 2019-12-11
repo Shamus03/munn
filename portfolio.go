@@ -1,7 +1,6 @@
 package munn
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -224,7 +223,7 @@ func (t *Transaction) Apply(now time.Time) bool {
 		t.ToAccount.Balance += t.Amount
 	}
 
-	fmt.Printf("Applied %s, %s\n", now.Format("2006-01-02"), t.Description)
+	logDebug("%s, Applied transaction %s\n", now.Format("2006-01-02"), t.Description)
 	return true
 }
 
@@ -246,6 +245,7 @@ func (a *Account) GainInterest(now time.Time) bool {
 	if !a.interestSchedule.ShouldApply(now) {
 		return false
 	}
+	logDebug("%s, Account %s gained interest\n", now.Format("2006-01-02"), a.Name)
 
 	monthlyInterest := a.AnnualInterestRate / 12
 	a.Balance = a.Balance * (1 + monthlyInterest)

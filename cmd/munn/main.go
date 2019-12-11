@@ -16,8 +16,13 @@ import (
 func main() {
 	years := flag.Int("years", 3, "Number of years to project")
 	image := flag.Bool("image", false, "Generate an image")
+	debug := flag.Bool("debug", false, "Debug account changes")
 	flag.Parse()
 	args := flag.Args()
+
+	if *debug {
+		munn.DEBUG = true
+	}
 
 	if len(args) < 1 {
 		log.Fatal("missing file name")
