@@ -39,7 +39,10 @@ func Parse(r io.Reader) (*Portfolio, error) {
 		if !ok {
 			return nil, fmt.Errorf("invalid account: %d", man.Account)
 		}
-		p.NewManualAdjustment(acc, time.Time(man.Time), man.Balance)
+		if man.Balance == nil {
+			return nil, fmt.Errorf("manual adjustment missing balance")
+		}
+		p.NewManualAdjustment(acc, time.Time(man.Time), *man.Balance)
 	}
 
 	for _, trans := range spec.Transactions {
@@ -62,7 +65,10 @@ func Parse(r io.Reader) (*Portfolio, error) {
 		if trans.Schedule.parsed == nil {
 			return nil, fmt.Errorf("transaction '%s' missing schedule", trans.Description)
 		}
-		p.NewTransaction(from, to, trans.Description, trans.Schedule.parsed, trans.Amount)
+		if trans.Amount == nil {
+			return nil, fmt.Errorf("transaction '%s' missing amount", trans.Description)
+		}
+		p.NewTransaction(from, to, trans.Description, trans.Schedule.parsed, *trans.Amount)
 	}
 
 	return p, nil
@@ -75,15 +81,15 @@ type portfolioSpec struct {
 		AnnualInterestRate float32 `yaml:"annualInterestRate"`
 	}
 	ManualAdjustments []struct {
-		Account int     `yaml:"account"`
-		Time    laxTime `yaml:"time"`
-		Balance float32 `yaml:"balance"`
+		Account int      `yaml:"account"`
+		Time    laxTime  `yaml:"time"`
+		Balance *float32 `yaml:"balance"`
 	} `yaml:"manualAdjustments"`
 	Transactions []struct {
 		FromAccount int          `yaml:"fromAccount"`
 		ToAccount   int          `yaml:"toAccount"`
 		Description string       `yaml:"description"`
-		Amount      float32      `yaml:"amount"`
+		Amount      *float32     `yaml:"amount"`
 		Schedule    jsonSchedule `yaml:"schedule"`
 	} `yaml:"transactions"`
 }
