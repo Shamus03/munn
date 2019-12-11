@@ -11,21 +11,21 @@ accounts:
 manualAdjustments:
 - account: *bank
   time: '2019-12-08'
-  balance: 20
+  balance: 2000
 - account: *savings
   time: '2019-12-08'
-  balance: 30
+  balance: 3000
 - account: *investment
   time: '2019-12-08'
-  balance: 40
+  balance: 4000
 - account: *retirement
   time: '2019-12-08'
-  balance: 50
+  balance: 5000
 scheduledTransactions:
 - toAccount: *bank
   description: Paycheck
   frequency: Weekly(Thursday)
-  amount: 1000
+  amount: 600
 - fromAccount: *bank
   description: Avg. Income Tax
   frequency: Weekly(Thursday)
@@ -37,7 +37,7 @@ scheduledTransactions:
 - fromAccount: *bank
   description: Rent
   frequency: Monthly
-  amount: 1000
+  amount: 700
 - fromAccount: *bank
   description: Spotify
   frequency: Monthly
@@ -62,7 +62,7 @@ scheduledTransactions:
   toAccount: *savings
   description: Auto Savings
   frequency: Monthly(10)
-  amount: 100
+  amount: 200
 - fromAccount: *bank
   toAccount: *retirement
   description: Roth Investment

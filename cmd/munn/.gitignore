@@ -1,3 +1,3 @@
 *.exe
-*[.json, .yaml]
-!example[.json, .yaml]
+*[.json, .yaml, .png]
+!example.*

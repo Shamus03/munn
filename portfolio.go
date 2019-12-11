@@ -12,8 +12,15 @@ type Portfolio struct {
 	ManualAdjustments     []*ManualAdjustment
 }
 
+// ProjectionRecord is a record in a projection.
+type ProjectionRecord struct {
+	Time        time.Time
+	AccountName string
+	Balance     float32
+}
+
 // Project a portfolio's balances for a period of time.
-func (p *Portfolio) Project(from, to time.Time) {
+func (p *Portfolio) Project(from, to time.Time) []ProjectionRecord {
 	// Set up initial balances
 	for _, adj := range p.ManualAdjustments {
 		if adj.Time.Before(from) {
@@ -24,7 +31,9 @@ func (p *Portfolio) Project(from, to time.Time) {
 		trans.lastApplied = from
 	}
 
-	// Always print first period
+	var recs []ProjectionRecord
+
+	// Always show first period
 	changed := true
 	for now := from; now.Before(to); now = now.AddDate(0, 0, 1) {
 		for _, adj := range p.ManualAdjustments {
@@ -47,11 +56,16 @@ func (p *Portfolio) Project(from, to time.Time) {
 
 		if changed {
 			for _, acc := range p.Accounts {
-				fmt.Printf("%s\t%s\t%.2f\n", now.Format("2006-01-02"), acc.Name, acc.Balance)
+				recs = append(recs, ProjectionRecord{
+					Time:        now,
+					AccountName: acc.Name,
+					Balance:     acc.Balance,
+				})
 			}
 		}
 		changed = false
 	}
+	return recs
 }
 
 // NewAccount adds a new account to the portfolio.
