@@ -42,7 +42,7 @@ func Parse(r io.Reader) (*Portfolio, error) {
 		p.NewManualAdjustment(acc, time.Time(man.Time), man.Balance)
 	}
 
-	for _, trans := range spec.ScheduledTransactions {
+	for _, trans := range spec.Transactions {
 		var from *Account
 		var to *Account
 		if trans.FromAccount != 0 {
@@ -59,7 +59,10 @@ func Parse(r io.Reader) (*Portfolio, error) {
 				return nil, fmt.Errorf("invalid account: %d", trans.ToAccount)
 			}
 		}
-		p.NewScheduledTransaction(from, to, trans.Description, trans.Frequency.parsed, trans.Amount)
+		if trans.Schedule.parsed == nil {
+			return nil, fmt.Errorf("transaction '%s' missing schedule", trans.Description)
+		}
+		p.NewTransaction(from, to, trans.Description, trans.Schedule.parsed, trans.Amount)
 	}
 
 	return p, nil
@@ -76,13 +79,13 @@ type portfolioSpec struct {
 		Time    laxTime `yaml:"time"`
 		Balance float32 `yaml:"balance"`
 	} `yaml:"manualAdjustments"`
-	ScheduledTransactions []struct {
-		FromAccount int           `yaml:"fromAccount"`
-		ToAccount   int           `yaml:"toAccount"`
-		Description string        `yaml:"description"`
-		Amount      float32       `yaml:"amount"`
-		Frequency   jsonFrequency `yaml:"frequency"`
-	} `yaml:"scheduledTransactions"`
+	Transactions []struct {
+		FromAccount int          `yaml:"fromAccount"`
+		ToAccount   int          `yaml:"toAccount"`
+		Description string       `yaml:"description"`
+		Amount      float32      `yaml:"amount"`
+		Schedule    jsonSchedule `yaml:"schedule"`
+	} `yaml:"transactions"`
 }
 
 type laxTime time.Time
@@ -108,11 +111,11 @@ func (l *laxTime) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return fmt.Errorf("failed to parse time as any of the valid formats: last error: %v", err)
 }
 
-type jsonFrequency struct {
-	parsed Frequency
+type jsonSchedule struct {
+	parsed Schedule
 }
 
-var jsonFrequencyRegex = regexp.MustCompile(`^(\w+)(\(.*\))?$`)
+var jsonScheduleRegex = regexp.MustCompile(`^(\w+)(\(.*\))?$`)
 
 var daysOfWeek = map[string]time.Weekday{
 	"sunday":    time.Sunday,
@@ -124,13 +127,13 @@ var daysOfWeek = map[string]time.Weekday{
 	"saturday":  time.Saturday,
 }
 
-func (f *jsonFrequency) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (f *jsonSchedule) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var s string
 	if err := unmarshal(&s); err != nil {
 		return err
 	}
 
-	matches := jsonFrequencyRegex.FindStringSubmatch(s)
+	matches := jsonScheduleRegex.FindStringSubmatch(s)
 	if len(matches) > 1 {
 		var args []string
 		if len(matches) > 2 {
@@ -146,7 +149,7 @@ func (f *jsonFrequency) UnmarshalYAML(unmarshal func(interface{}) error) error {
 					return fmt.Errorf("invalid weekday: %s", args[0])
 				}
 			}
-			*f = jsonFrequency{Weekly(day)}
+			*f = jsonSchedule{Weekly(day)}
 			return nil
 		case "Monthly":
 			day := 1
@@ -157,9 +160,20 @@ func (f *jsonFrequency) UnmarshalYAML(unmarshal func(interface{}) error) error {
 					return err
 				}
 			}
-			*f = jsonFrequency{Monthly(day)}
+			f.parsed = Monthly(day)
+			return nil
+		case "Once":
+			if len(args) != 1 {
+				return fmt.Errorf("Once schedule requires a date")
+			}
+
+			t, err := time.Parse("2006-01-02", args[0])
+			if err != nil {
+				return err
+			}
+			f.parsed = Once(t)
 			return nil
 		}
 	}
-	return fmt.Errorf("invalid frequency: %s", s)
+	return fmt.Errorf("invalid schedule: %s", s)
 }

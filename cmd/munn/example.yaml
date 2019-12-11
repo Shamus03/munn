@@ -21,50 +21,55 @@ manualAdjustments:
 - account: *retirement
   time: '2019-12-08'
   balance: 5000
-scheduledTransactions:
+transactions:
 - toAccount: *bank
   description: Paycheck
-  frequency: Weekly(Thursday)
+  schedule: Weekly(Thursday)
   amount: 600
 - fromAccount: *bank
   description: Avg. Income Tax
-  frequency: Weekly(Thursday)
+  schedule: Weekly(Thursday)
   amount: 50
 - fromAccount: *bank
   description: Phone
-  frequency: Monthly
+  schedule: Monthly
   amount: 25
 - fromAccount: *bank
   description: Rent
-  frequency: Monthly
+  schedule: Monthly
   amount: 700
 - fromAccount: *bank
   description: Spotify
-  frequency: Monthly
+  schedule: Monthly
   amount: 10.81
 - fromAccount: *bank
   description: Credit Card
-  frequency: Monthly
+  schedule: Monthly
   amount: 1000
 - fromAccount: *bank
   description: Internet
-  frequency: Monthly
+  schedule: Monthly
   amount: 50
 - fromAccount: *bank
   description: Electric
-  frequency: Monthly
+  schedule: Monthly
   amount: 60
 - fromAccount: *bank
   description: Auto/Renters Insurance
-  frequency: Monthly
+  schedule: Monthly
   amount: 100
 - fromAccount: *bank
   toAccount: *savings
   description: Auto Savings
-  frequency: Monthly(10)
+  schedule: Monthly(10)
   amount: 200
 - fromAccount: *bank
   toAccount: *retirement
   description: Roth Investment
-  frequency: Monthly(10)
+  schedule: Monthly(10)
   amount: 100
+
+- toAccount: *bank
+  description: Won the lottery!
+  schedule: Once(2020-12-08)
+  amount: 5000

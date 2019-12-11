@@ -7,9 +7,9 @@ import (
 
 // Portfolio represents a person's financial portfolio.
 type Portfolio struct {
-	Accounts              []*Account
-	ScheduledTransactions []*ScheduledTransaction
-	ManualAdjustments     []*ManualAdjustment
+	Accounts          []*Account
+	Transactions      []*Transaction
+	ManualAdjustments []*ManualAdjustment
 }
 
 // ProjectionRecord is a record in a projection.
@@ -26,9 +26,6 @@ func (p *Portfolio) Project(from, to time.Time) []ProjectionRecord {
 		if adj.Time.Before(from) {
 			adj.Apply(adj.Time)
 		}
-	}
-	for _, trans := range p.ScheduledTransactions {
-		trans.lastApplied = from
 	}
 
 	var recs []ProjectionRecord
@@ -48,7 +45,7 @@ func (p *Portfolio) Project(from, to time.Time) []ProjectionRecord {
 			}
 		}
 
-		for _, trans := range p.ScheduledTransactions {
+		for _, trans := range p.Transactions {
 			if trans.Apply(now) {
 				changed = true
 			}
@@ -99,16 +96,16 @@ func (p *Portfolio) NewManualAdjustment(acc *Account, t time.Time, balance float
 	p.ManualAdjustments = newArr
 }
 
-// NewScheduledTransaction adds a new scheduled transaction to the portfolio.
-func (p *Portfolio) NewScheduledTransaction(from, to *Account, desc string, f Frequency, amt float32) *ScheduledTransaction {
-	t := &ScheduledTransaction{
+// NewTransaction adds a new transaction to the portfolio.
+func (p *Portfolio) NewTransaction(from, to *Account, desc string, s Schedule, amt float32) *Transaction {
+	t := &Transaction{
 		Description: desc,
-		Frequency:   f,
+		Schedule:    s,
 		FromAccount: from,
 		ToAccount:   to,
 		Amount:      amt,
 	}
-	p.ScheduledTransactions = append(p.ScheduledTransactions, t)
+	p.Transactions = append(p.Transactions, t)
 	return t
 }
 
@@ -131,71 +128,103 @@ func (a *ManualAdjustment) Apply(now time.Time) bool {
 	return true
 }
 
-// Frequency determines the next time for a scheduled transaction to be applied, based on the last time it was applied.
-type Frequency interface {
-	Next(time.Time) time.Time
+// Schedule determines the next time for a transaction to be applied, based on the last time it was applied.
+type Schedule interface {
+	ShouldApply(time.Time) bool
 }
 
-// Weekly frequency will run weekly on the given weekday.
-func Weekly(day time.Weekday) Frequency {
-	return weeklyFrequency{day}
-}
-
-type weeklyFrequency struct {
-	weekday time.Weekday
-}
-
-func (f weeklyFrequency) Next(t time.Time) time.Time {
-	n := t.AddDate(0, 0, 7)
-	for n.Weekday() != f.weekday {
-		n = n.AddDate(0, 0, -1)
+// Weekly schedule will run weekly on the given weekday.
+func Weekly(day time.Weekday) Schedule {
+	return &weeklySchedule{
+		weekday: day,
 	}
-	return n
 }
 
-type monthlyFrequency struct {
-	day int
-}
-
-// Monthly frequency will run monthly on the given day of the month.
-func Monthly(day int) Frequency {
-	return monthlyFrequency{day}
-}
-
-func (f monthlyFrequency) Next(t time.Time) time.Time {
-	year, month, _ := t.AddDate(0, 1, 0).Date()
-	return time.Date(year, month, f.day, 0, 0, 0, 0, time.Local)
-}
-
-// ScheduledTransaction is a scheduled transaction from one account to another on a set frequency.
-// If FromAccount or ToAccount is nil, this transaction represents money in/out of the portfolio (payments, income, etc.).
-// Otherwise it is a transfer between two accounts in the portfolio.
-type ScheduledTransaction struct {
-	Description string
-	Frequency   Frequency
-	FromAccount *Account
-	ToAccount   *Account
-	Amount      float32
+type weeklySchedule struct {
+	weekday     time.Weekday
 	lastApplied time.Time
 }
 
-// Apply the scheduled transaction.
-func (s *ScheduledTransaction) Apply(now time.Time) bool {
-	next := s.Frequency.Next(s.lastApplied)
-	if now.Before(next) {
+func (s *weeklySchedule) ShouldApply(t time.Time) bool {
+	n := s.lastApplied.AddDate(0, 0, 7)
+	for n.Weekday() != s.weekday {
+		n = n.AddDate(0, 0, -1)
+	}
+	if t.Before(n) {
+		return false
+	}
+	s.lastApplied = t
+	return true
+}
+
+type monthlySchedule struct {
+	day         int
+	lastApplied time.Time
+}
+
+// Monthly schedule will run monthly on the given day of the month.
+func Monthly(day int) Schedule {
+	return &monthlySchedule{
+		day: day,
+	}
+}
+
+func (s *monthlySchedule) ShouldApply(t time.Time) bool {
+	year, month, _ := s.lastApplied.AddDate(0, 1, 0).Date()
+	if t.Before(time.Date(year, month, s.day, 0, 0, 0, 0, time.Local)) {
+		return false
+	}
+	s.lastApplied = t
+	return true
+}
+
+type onceSchedule struct {
+	time    time.Time
+	applied bool
+}
+
+// Once schedule will run once at the given time.
+func Once(t time.Time) Schedule {
+	return &onceSchedule{
+		time: t,
+	}
+}
+
+func (s *onceSchedule) ShouldApply(t time.Time) bool {
+	if s.applied || t.Before(s.time) {
+		return false
+	}
+	s.applied = true
+	return true
+}
+
+// Transaction is a transaction from one account to another.
+// It may have a schedule to repeat the transaction on some interval.
+// If FromAccount or ToAccount is nil, this transaction represents money in/out of the portfolio (payments, income, etc.).
+// Otherwise it is a transfer between two accounts in the portfolio.
+type Transaction struct {
+	Description string
+	Schedule    Schedule
+	FromAccount *Account
+	ToAccount   *Account
+	Amount      float32
+}
+
+// Apply the transaction.
+func (t *Transaction) Apply(now time.Time) bool {
+	if !t.Schedule.ShouldApply(now) {
 		return false
 	}
 
 	// If either account is nil, the transaction represents money in/out of the overall portfolio
-	if s.FromAccount != nil {
-		s.FromAccount.Balance -= s.Amount
+	if t.FromAccount != nil {
+		t.FromAccount.Balance -= t.Amount
 	}
-	if s.ToAccount != nil {
-		s.ToAccount.Balance += s.Amount
+	if t.ToAccount != nil {
+		t.ToAccount.Balance += t.Amount
 	}
-	s.lastApplied = now
 
-	fmt.Printf("Applied %s, %s\n", now.Format("2006-01-02"), s.Description)
+	fmt.Printf("Applied %s, %s\n", now.Format("2006-01-02"), t.Description)
 	return true
 }
 
@@ -205,20 +234,21 @@ type Account struct {
 	Name               string
 	Balance            float32
 	AnnualInterestRate float32
-	lastInterest       time.Time
+	interestSchedule   Schedule
 }
 
 // GainInterest adds interest to the account.
 func (a *Account) GainInterest(now time.Time) bool {
-	f := Monthly(1)
+	if a.interestSchedule == nil {
+		a.interestSchedule = Monthly(1)
+	}
 
-	if now.Before(f.Next(a.lastInterest)) {
+	if !a.interestSchedule.ShouldApply(now) {
 		return false
 	}
 
 	monthlyInterest := a.AnnualInterestRate / 12
 	a.Balance = a.Balance * (1 + monthlyInterest)
 
-	a.lastInterest = now
 	return true
 }

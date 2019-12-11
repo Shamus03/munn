@@ -43,23 +43,6 @@ func main() {
 	recs := p.Project(from, to)
 
 	if *image {
-		// var series []chart.Series
-		// for _, acc := range p.Accounts {
-		// 	var x []time.Time
-		// 	var y []float64
-		// 	for _, rec := range recs {
-		// 		if rec.AccountName == acc.Name {
-		// 			x = append(x, rec.Time)
-		// 			y = append(y, float64(rec.Balance))
-		// 		}
-		// 	}
-		// 	series = append(series, chart.TimeSeries{
-		// 		Name:    acc.Name,
-		// 		XValues: x,
-		// 		YValues: y,
-		// 	})
-		// }
-
 		var sum float32
 		var lastTime time.Time
 		seriesMap := make(map[string]*chart.TimeSeries)
