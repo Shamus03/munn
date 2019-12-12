@@ -48,58 +48,14 @@ func main() {
 	recs := p.Project(from, to)
 
 	if *image {
-		var sum float32
-		var lastTime time.Time
-		seriesMap := make(map[string]*chart.TimeSeries)
-		for _, rec := range recs {
-			if rec.Time != lastTime {
-				sum = 0
-			}
-			lastTime = rec.Time
-			s, ok := seriesMap[rec.AccountName]
-			if !ok {
-				s = &chart.TimeSeries{
-					Name: rec.AccountName,
-				}
-				seriesMap[rec.AccountName] = s
-			}
-			sum += rec.Balance
-			s.XValues = append(s.XValues, rec.Time)
-			s.YValues = append(s.YValues, float64(sum))
-		}
-
-		var series []chart.Series
-		for i := len(p.Accounts) - 1; i >= 0; i-- {
-			series = append(series, seriesMap[p.Accounts[i].Name])
-		}
-
 		name := strings.TrimSuffix(args[0], filepath.Ext(args[0]))
-
-		graph := chart.Chart{
-			Series: series,
-			XAxis: chart.XAxis{
-				Name: "Date",
-			},
-			YAxis: chart.YAxis{
-				Name: "Account Balance",
-				ValueFormatter: func(v interface{}) string {
-					n := v.(float64)
-					return fmt.Sprintf("%.0fk", n/1000)
-				},
-			},
-		}
-
-		graph.Elements = []chart.Renderable{
-			chart.Legend(&graph),
-		}
-
 		f, err := os.Create(name + ".png")
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer f.Close()
 
-		if err := graph.Render(chart.PNG, f); err != nil {
+		if err := p.Chart(recs).Render(chart.PNG, f); err != nil {
 			log.Fatal(err)
 		}
 	} else {
