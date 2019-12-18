@@ -4,12 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"munn"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/Shamus03/munn"
 	chart "github.com/wcharczuk/go-chart"
 )
 

@@ -1,4 +1,4 @@
-module munn
+module github.com/Shamus03/munn
 
 require (
 	github.com/blend/go-sdk v2.0.0+incompatible // indirect
