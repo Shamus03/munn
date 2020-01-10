@@ -147,6 +147,16 @@ func (f *jsonSchedule) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		}
 
 		switch matches[1] {
+		case "Biweekly":
+			day := time.Sunday
+			if len(args) > 0 {
+				var ok bool
+				if day, ok = daysOfWeek[strings.ToLower(args[0])]; !ok {
+					return fmt.Errorf("invalid weekday: %s", args[0])
+				}
+			}
+			*f = jsonSchedule{Biweekly(day)}
+			return nil
 		case "Weekly":
 			day := time.Sunday
 			if len(args) > 0 {

@@ -33,6 +33,30 @@ func (s *weeklySchedule) ShouldApply(t time.Time) bool {
 	return true
 }
 
+// Biweekly schedule will run biweekly on the given weekday.
+func Biweekly(day time.Weekday) Schedule {
+	return &biweeklySchedule{
+		weekday: day,
+	}
+}
+
+type biweeklySchedule struct {
+	weekday     time.Weekday
+	lastApplied time.Time
+}
+
+func (s *biweeklySchedule) ShouldApply(t time.Time) bool {
+	n := s.lastApplied.AddDate(0, 0, 14)
+	for n.Weekday() != s.weekday {
+		n = n.AddDate(0, 0, -1)
+	}
+	if t.Before(n) {
+		return false
+	}
+	s.lastApplied = t
+	return true
+}
+
 type monthlySchedule struct {
 	day         int
 	lastApplied time.Time
