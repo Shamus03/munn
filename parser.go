@@ -178,7 +178,7 @@ func (f *jsonSchedule) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 
 	matches := jsonScheduleRegex.FindStringSubmatch(s)
-	if len(matches) == 0 {
+	if len(matches) < 2 {
 		return fmt.Errorf("invalid schedule: %s", s)
 	}
 
@@ -187,7 +187,7 @@ func (f *jsonSchedule) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		args = strings.Fields(strings.Trim(matches[2], "()"))
 	}
 
-	parser, ok := getScheduleParser(matches[1])
+	parser, ok := GetScheduleParser(matches[1])
 	if !ok {
 		return fmt.Errorf("no schedule parser registered for name: %s", matches[1])
 	}

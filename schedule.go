@@ -8,10 +8,10 @@ import (
 )
 
 func init() {
-	registerScheduleParser("Weekly", &weeklySchedule{})
-	registerScheduleParser("Biweekly", &biweeklySchedule{})
-	registerScheduleParser("Monthly", &monthlySchedule{})
-	registerScheduleParser("Once", &onceSchedule{})
+	RegisterScheduleParser("Weekly", &weeklySchedule{})
+	RegisterScheduleParser("Biweekly", &biweeklySchedule{})
+	RegisterScheduleParser("Monthly", &monthlySchedule{})
+	RegisterScheduleParser("Once", &onceSchedule{})
 }
 
 // Schedule determines the next time for a transaction to be applied, based on the last time it was applied.
