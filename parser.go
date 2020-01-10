@@ -16,7 +16,7 @@ var (
 	scheduleParsers     = make(map[string]ScheduleParser)
 )
 
-// RegisterSchedulerParser registers a schedule parser
+// RegisterScheduleParser registers a schedule parser
 func RegisterScheduleParser(name string, parser ScheduleParser) {
 	if parser == nil {
 		panic("parser cannot be nil")
