@@ -4,12 +4,45 @@ import (
 	"fmt"
 	"io"
 	"regexp"
-	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"gopkg.in/yaml.v2"
 )
+
+var (
+	scheduleParsersLock sync.Mutex
+	scheduleParsers     = make(map[string]ScheduleParser)
+)
+
+// RegisterSchedulerParser registers a schedule parser
+func RegisterScheduleParser(name string, parser ScheduleParser) {
+	if parser == nil {
+		panic("parser cannot be nil")
+	}
+
+	scheduleParsersLock.Lock()
+	defer scheduleParsersLock.Unlock()
+
+	if _, ok := scheduleParsers[name]; ok {
+		panic(fmt.Sprintf("parser already registered for name: %s", name))
+	}
+
+	scheduleParsers[name] = parser
+}
+
+// GetScheduleParser gets a schedule parser
+func GetScheduleParser(name string) (ScheduleParser, bool) {
+	scheduleParsersLock.Lock()
+	defer scheduleParsersLock.Unlock()
+
+	parser, ok := scheduleParsers[name]
+	if !ok {
+		return nil, false
+	}
+	return parser, true
+}
 
 // Parse will read a portfolio from an io.Reader.
 func Parse(r io.Reader) (*Portfolio, error) {
@@ -133,6 +166,11 @@ var daysOfWeek = map[string]time.Weekday{
 	"saturday":  time.Saturday,
 }
 
+// ScheduleParser parses a schedule
+type ScheduleParser interface {
+	ParseSchedule(args []string) (Schedule, error)
+}
+
 func (f *jsonSchedule) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var s string
 	if err := unmarshal(&s); err != nil {
@@ -140,56 +178,25 @@ func (f *jsonSchedule) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 
 	matches := jsonScheduleRegex.FindStringSubmatch(s)
-	if len(matches) > 1 {
-		var args []string
-		if len(matches) > 2 {
-			args = strings.Fields(strings.Trim(matches[2], "()"))
-		}
-
-		switch matches[1] {
-		case "Biweekly":
-			day := time.Sunday
-			if len(args) > 0 {
-				var ok bool
-				if day, ok = daysOfWeek[strings.ToLower(args[0])]; !ok {
-					return fmt.Errorf("invalid weekday: %s", args[0])
-				}
-			}
-			*f = jsonSchedule{Biweekly(day)}
-			return nil
-		case "Weekly":
-			day := time.Sunday
-			if len(args) > 0 {
-				var ok bool
-				if day, ok = daysOfWeek[strings.ToLower(args[0])]; !ok {
-					return fmt.Errorf("invalid weekday: %s", args[0])
-				}
-			}
-			*f = jsonSchedule{Weekly(day)}
-			return nil
-		case "Monthly":
-			day := 1
-			if len(args) > 0 {
-				var err error
-				day, err = strconv.Atoi(args[0])
-				if err != nil {
-					return err
-				}
-			}
-			f.parsed = Monthly(day)
-			return nil
-		case "Once":
-			if len(args) != 1 {
-				return fmt.Errorf("Once schedule requires a date")
-			}
-
-			t, err := time.Parse("2006-01-02", args[0])
-			if err != nil {
-				return err
-			}
-			f.parsed = Once(t)
-			return nil
-		}
+	if len(matches) == 0 {
+		return fmt.Errorf("invalid schedule: %s", s)
 	}
-	return fmt.Errorf("invalid schedule: %s", s)
+
+	var args []string
+	if len(matches) > 2 {
+		args = strings.Fields(strings.Trim(matches[2], "()"))
+	}
+
+	parser, ok := getScheduleParser(matches[1])
+	if !ok {
+		return fmt.Errorf("no schedule parser registered for name: %s", matches[1])
+	}
+
+	schedule, err := parser.ParseSchedule(args)
+	if err != nil {
+		return fmt.Errorf("error parsing schedule: %v", err)
+	}
+
+	*f = jsonSchedule{schedule}
+	return nil
 }
