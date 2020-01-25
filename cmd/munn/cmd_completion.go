@@ -37,6 +37,8 @@ var completionCmd = &cobra.Command{
 		switch args[0] {
 		case "bash":
 			return cmd.Root().GenBashCompletion(cmd.OutOrStdout())
+		case "zsh":
+			return cmd.Root().GenZshCompletion(cmd.OutOrStdout())
 		default:
 			return fmt.Errorf("unknown shell type")
 		}
