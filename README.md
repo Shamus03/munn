@@ -6,7 +6,7 @@ CLI tool to project financial portfolio value.
 Output is formatted with tabs to easily paste into Excel:
 
 ```bash
-λ munn example.yaml | tail
+λ munn example.munn | tail
 2022-11-24      Investment      4000.00
 2022-11-24      Retirement      8600.00
 2022-12-01      Bank    12735.98
@@ -21,14 +21,14 @@ Output is formatted with tabs to easily paste into Excel:
 
 You can also generate a graph image:
 ```bash
-λ munn --image example.yaml
+λ munn --image example.munn
 ```
 ![](cmd/munn/example.png)
 
 
 Use the `-debug` flag to debug account changes:
 ```bash
-λ munn -debug -image example.yaml | tail
+λ munn -debug -image example.munn | tail
 2022-12-02, Account Savings gained interest
 2022-12-02, Account Investment gained interest
 2022-12-02, Account Retirement gained interest

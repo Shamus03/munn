@@ -1,5 +1,4 @@
 *.exe
-*.json
-*.yaml
+*.munn
 *.png
 !example.*
