@@ -26,9 +26,9 @@ You can also generate a graph image:
 ![](cmd/munn/example.png)
 
 
-Use the `-debug` flag to debug account changes:
+Use the `--debug` flag to debug account changes:
 ```bash
-λ munn -debug -image example.munn | tail
+λ munn --debug --image example.munn | tail
 2022-12-02, Account Savings gained interest
 2022-12-02, Account Investment gained interest
 2022-12-02, Account Retirement gained interest
