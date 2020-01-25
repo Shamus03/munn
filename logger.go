@@ -2,11 +2,8 @@ package munn
 
 import "fmt"
 
-// DEBUG if true will enable debug logging
-var DEBUG = false
-
-func logDebug(format string, args ...interface{}) {
-	if DEBUG {
+func (p *Portfolio) logDebug(format string, args ...interface{}) {
+	if p.Debug {
 		fmt.Printf(format, args...)
 	}
 }

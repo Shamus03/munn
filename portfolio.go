@@ -9,13 +9,15 @@ type Portfolio struct {
 	Accounts          []*Account
 	Transactions      []*Transaction
 	ManualAdjustments []*ManualAdjustment
+	Debug             bool
 }
 
 // NewAccount adds a new account to the portfolio.
 func (p *Portfolio) NewAccount(name string) *Account {
 	a := &Account{
-		Name:    name,
-		Balance: 0,
+		Portfolio: p,
+		Name:      name,
+		Balance:   0,
 	}
 	p.Accounts = append(p.Accounts, a)
 	return a
@@ -25,9 +27,10 @@ func (p *Portfolio) NewAccount(name string) *Account {
 // It should be used to set the initial balance for an account or to log significant intended changes in the value of an account.
 func (p *Portfolio) NewManualAdjustment(acc *Account, t time.Time, balance float32) {
 	m := &ManualAdjustment{
-		Account: acc,
-		Time:    t,
-		Balance: balance,
+		Portfolio: p,
+		Account:   acc,
+		Time:      t,
+		Balance:   balance,
 	}
 	var i int
 	for i = 0; i < len(p.ManualAdjustments); i++ {
@@ -46,6 +49,7 @@ func (p *Portfolio) NewManualAdjustment(acc *Account, t time.Time, balance float
 func (p *Portfolio) NewTransaction(from, to *Account, desc string, s Schedule, amt float32) *Transaction {
 	t := &Transaction{
 		Description: desc,
+		Portfolio:   p,
 		Schedule:    s,
 		FromAccount: from,
 		ToAccount:   to,
@@ -57,10 +61,11 @@ func (p *Portfolio) NewTransaction(from, to *Account, desc string, s Schedule, a
 
 // ManualAdjustment is a single manual adjustment made on an account.
 type ManualAdjustment struct {
-	Account *Account
-	Time    time.Time
-	Balance float32
-	applied bool
+	Portfolio *Portfolio
+	Account   *Account
+	Time      time.Time
+	Balance   float32
+	applied   bool
 }
 
 // Apply the manual adjustment.
@@ -70,7 +75,7 @@ func (a *ManualAdjustment) Apply(now time.Time) bool {
 	}
 
 	a.applied = true
-	logDebug("%s, Applied manual adjustment for account %s from %.2f to %.2f\n",
+	a.Portfolio.logDebug("%s, Applied manual adjustment for account %s from %.2f to %.2f\n",
 		now.Format("2006-01-02"),
 		a.Account.Name,
 		a.Account.Balance,
@@ -86,6 +91,7 @@ func (a *ManualAdjustment) Apply(now time.Time) bool {
 // Otherwise it is a transfer between two accounts in the portfolio.
 type Transaction struct {
 	Description string
+	Portfolio   *Portfolio
 	Schedule    Schedule
 	FromAccount *Account
 	ToAccount   *Account
@@ -106,7 +112,7 @@ func (t *Transaction) Apply(now time.Time) bool {
 		t.ToAccount.Balance += t.Amount
 	}
 
-	logDebug("%s, Applied transaction %s\n", now.Format("2006-01-02"), t.Description)
+	t.Portfolio.logDebug("%s, Applied transaction %s\n", now.Format("2006-01-02"), t.Description)
 	return true
 }
 
@@ -114,6 +120,7 @@ func (t *Transaction) Apply(now time.Time) bool {
 // An account may also have an annual interest rate which is applied monthly.
 type Account struct {
 	Name               string
+	Portfolio          *Portfolio
 	Balance            float32
 	AnnualInterestRate float32
 	interestSchedule   Schedule
@@ -128,7 +135,7 @@ func (a *Account) GainInterest(now time.Time) bool {
 	if !a.interestSchedule.ShouldApply(now) {
 		return false
 	}
-	logDebug("%s, Account %s gained interest\n", now.Format("2006-01-02"), a.Name)
+	a.Portfolio.logDebug("%s, Account %s gained interest\n", now.Format("2006-01-02"), a.Name)
 
 	monthlyInterest := a.AnnualInterestRate / 12
 	a.Balance = a.Balance * (1 + monthlyInterest)
