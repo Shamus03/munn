@@ -70,6 +70,12 @@ func (a *ManualAdjustment) Apply(now time.Time) bool {
 	}
 
 	a.applied = true
+	logDebug("%s, Applied manual adjustment for account %s from %.2f to %.2f\n",
+		now.Format("2006-01-02"),
+		a.Account.Name,
+		a.Account.Balance,
+		a.Balance,
+	)
 	a.Account.Balance = a.Balance
 	return true
 }
