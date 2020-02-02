@@ -43,6 +43,9 @@ func (p Portfolio) Chart(recs []ProjectionRecord) chart.Chart {
 			Name: "Account Balance",
 			ValueFormatter: func(v interface{}) string {
 				n := v.(float64)
+				if n == 0 {
+					return "0"
+				}
 				return fmt.Sprintf("%.0fk", n/1000)
 			},
 		},
