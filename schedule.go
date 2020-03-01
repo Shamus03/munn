@@ -15,8 +15,10 @@ func init() {
 }
 
 // Schedule determines the next time for a transaction to be applied, based on the last time it was applied.
+// YearlyFactor should return the average number of times the schedule will be applied in a year (eg. a weekly schedule is applied 52 times in a year)
 type Schedule interface {
 	ShouldApply(time.Time) bool
+	YearlyFactor() float32
 }
 
 // Weekly schedule will run weekly on the given weekday.
@@ -41,6 +43,10 @@ func (s *weeklySchedule) ShouldApply(t time.Time) bool {
 	}
 	s.lastApplied = t
 	return true
+}
+
+func (s *weeklySchedule) YearlyFactor() float32 {
+	return 52
 }
 
 func (s *weeklySchedule) ParseSchedule(args []string) (Schedule, error) {
@@ -79,6 +85,10 @@ func (s *biweeklySchedule) ShouldApply(t time.Time) bool {
 	return true
 }
 
+func (s *biweeklySchedule) YearlyFactor() float32 {
+	return 26
+}
+
 func (s *biweeklySchedule) ParseSchedule(args []string) (Schedule, error) {
 	day := time.Sunday
 	if len(args) > 0 {
@@ -112,6 +122,10 @@ func (s *monthlySchedule) ShouldApply(t time.Time) bool {
 	return true
 }
 
+func (s *monthlySchedule) YearlyFactor() float32 {
+	return 12
+}
+
 func (s *monthlySchedule) ParseSchedule(args []string) (Schedule, error) {
 	day := 1
 	if len(args) > 0 {
@@ -142,6 +156,11 @@ func (s *onceSchedule) ShouldApply(t time.Time) bool {
 	}
 	s.applied = true
 	return true
+}
+
+// Since the transaction only applies once, don't consider it in yearly projections.
+func (s *onceSchedule) YearlyFactor() float32 {
+	return 0
 }
 
 func (s *onceSchedule) ParseSchedule(args []string) (Schedule, error) {

@@ -17,6 +17,7 @@ import (
 func init() {
 	rootCmd.Flags().IntP("years", "y", 3, "Number of years to project")
 	rootCmd.Flags().BoolP("image", "i", false, "Generate an image")
+	rootCmd.Flags().BoolP("stats", "s", false, "Print stats for the portfolio")
 	rootCmd.Flags().BoolP("debug", "d", false, "Debug account changes")
 	rootCmd.Flags().BoolP("watch", "w", false, "Watch input file")
 }
@@ -27,6 +28,7 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		years, _ := cmd.Flags().GetInt("years")
 		image, _ := cmd.Flags().GetBool("image")
+		stats, _ := cmd.Flags().GetBool("stats")
 		debug, _ := cmd.Flags().GetBool("debug")
 		watch, _ := cmd.Flags().GetBool("watch")
 		fileName := args[0]
@@ -51,6 +53,10 @@ var rootCmd = &cobra.Command{
 
 			to := from.AddDate(years, 0, 0)
 			recs := p.Project(from, to)
+
+			if stats {
+				fmt.Println(p.Stats())
+			}
 
 			if image {
 				name := strings.TrimSuffix(fileName, filepath.Ext(fileName)) + ".png"
