@@ -75,11 +75,14 @@ func (a *ManualAdjustment) Apply(now time.Time) bool {
 	}
 
 	a.applied = true
-	a.Portfolio.logDebug("%s, Applied manual adjustment for account %s from %.2f to %.2f\n",
+
+	diff := a.Balance - a.Account.Balance
+	a.Portfolio.logDebug("%s, Applied manual adjustment for account %s from %.2f to %.2f (%.2f difference)\n",
 		now.Format("2006-01-02"),
 		a.Account.Name,
 		a.Account.Balance,
 		a.Balance,
+		diff,
 	)
 	a.Account.Balance = a.Balance
 	return true
