@@ -45,14 +45,7 @@ var rootCmd = &cobra.Command{
 			}
 			p.Debug = debug
 
-			from := time.Now()
-			for _, man := range p.ManualAdjustments {
-				from = man.Time
-				break
-			}
-
-			to := from.AddDate(years, 0, 0)
-			recs := p.Project(from, to)
+			recs := p.Project(years)
 
 			if stats {
 				fmt.Println(p.Stats())
