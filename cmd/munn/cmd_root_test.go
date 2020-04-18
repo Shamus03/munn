@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -19,36 +20,30 @@ func Test_RootCmd(t *testing.T) {
 }
 
 func (s *rootCmdSuite) SetupTest() {
-	buf := new(strings.Builder)
 	rootCmd.ResetFlags()
 	setupRootCmd()
-	rootCmd.SetOut(buf)
+
+	buf := new(strings.Builder)
+	rootCmd.SetOutput(buf)
 	s.output = buf
 }
 
-func (s *rootCmdSuite) run(args ...string) {
+func (s *rootCmdSuite) run(args ...string) []string {
 	rootCmd.SetArgs(args)
-	require := s.Require()
-	require.Nil(rootCmd.ParseFlags(args))
-	require.Nil(rootCmd.Execute())
-}
-
-func (s *rootCmdSuite) lines() []string {
+	s.Require().Nil(rootCmd.Execute())
 	return strings.Split(strings.Trim(s.output.String(), "\n"), "\n")
 }
 
 func (s *rootCmdSuite) Test_Example() {
-	s.run("example.munn")
 	assert := s.Assert()
-	lines := s.lines()
+	lines := s.run("example.munn")
 
 	assert.NotEmpty(lines)
 }
 
 func (s *rootCmdSuite) Test_Example_Years() {
-	s.run("example.munn", "--years", "100")
 	assert := s.Assert()
-	lines := s.lines()
+	lines := s.run("example.munn", "--years", "100")
 
 	if assert.NotEmpty(lines) {
 		firstYear, _ := strconv.Atoi(strings.Split(lines[0], "-")[0])
@@ -58,9 +53,8 @@ func (s *rootCmdSuite) Test_Example_Years() {
 }
 
 func (s *rootCmdSuite) Test_Example_Retire() {
-	s.run("example.munn", "--retire", "2080-01-01:25000")
 	assert := s.Assert()
-	lines := s.lines()
+	lines := s.run("example.munn", "--retire", "2080-01-01:25000")
 
 	if assert.NotEmpty(lines) {
 		lastLine := lines[len(lines)-1]
@@ -68,10 +62,25 @@ func (s *rootCmdSuite) Test_Example_Retire() {
 	}
 }
 
-func (s *rootCmdSuite) Test_Example_Stats() {
-	s.run("example.munn", "--stats")
+func (s *rootCmdSuite) Test_Example_Retire_Years() {
 	assert := s.Assert()
-	lines := s.lines()
+	lines := s.run("example.munn", "--retire", "2080-01-01:25000", "--years", "100")
+
+	if assert.NotEmpty(lines) {
+		firstYear, _ := strconv.Atoi(strings.Split(lines[0], "-")[0])
+		lastYear, _ := strconv.Atoi(strings.Split(lines[len(lines)-2], "-")[0])
+		assert.Equal(100, lastYear-firstYear, lines[0])
+
+		lastLine := strings.Split(lines[len(lines)-1], ": ")
+		_, err := time.Parse("2006-01-02", lastLine[1])
+		assert.Equal("Retirement date", lastLine[0])
+		assert.Nil(err, "should have given a retirement date")
+	}
+}
+
+func (s *rootCmdSuite) Test_Example_Stats() {
+	assert := s.Assert()
+	lines := s.run("example.munn", "--stats")
 
 	if assert.True(len(lines) > 3, "should have at least 3 lines") {
 		assert.Equal("Average monthly expenses", strings.Split(lines[0], ":")[0])
