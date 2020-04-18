@@ -5,6 +5,7 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/radovskyb/watcher v1.0.7
 	github.com/spf13/cobra v0.0.5
+	github.com/stretchr/testify v1.2.2
 	github.com/wcharczuk/go-chart v2.0.2-0.20191206192251-962b9abdec2b+incompatible
 	golang.org/x/image v0.0.0-20191206065243-da761ea9ff43 // indirect
 	gopkg.in/yaml.v2 v2.2.7

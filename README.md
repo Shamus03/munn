@@ -40,3 +40,18 @@ Use the `--debug` flag to debug account changes:
 2022-12-02, Applied transaction Electric
 2022-12-02, Applied transaction Auto/Renters Insurance
 ```
+
+Supply a retirement plan with the `--retire` flag to see a projected retirement date:
+```bash
+λ munn example.munn --years 100 --retire 2080-01-01:25000 | tail
+2119-11-30      Retirement      124900.00
+2119-12-02      Bank    322148.31
+2119-12-02      Savings 242800.00
+2119-12-02      Investment      4000.00
+2119-12-02      Retirement      124900.00
+2119-12-07      Bank    322698.31
+2119-12-07      Savings 242800.00
+2119-12-07      Investment      4000.00
+2119-12-07      Retirement      124900.00
+Retirement date: 2068-01-02
+```

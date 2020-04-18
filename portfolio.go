@@ -9,7 +9,40 @@ type Portfolio struct {
 	Accounts          []*Account
 	Transactions      []*Transaction
 	ManualAdjustments []*ManualAdjustment
+	RetirementPlan    *RetirementPlan
 	Debug             bool
+}
+
+// TotalBalance gets the current total balance for all accounts.
+func (p *Portfolio) TotalBalance() float32 {
+	var b float32
+	for _, a := range p.Accounts {
+		b += a.Balance
+	}
+	return b
+}
+
+// RetirementPlan is a plan to retire.
+type RetirementPlan struct {
+	DeathDate      time.Time
+	YearlyExpenses float32
+	retireDate     *time.Time
+}
+
+// RetireDate gets the found retirement date.
+func (p *RetirementPlan) RetireDate() (time.Time, bool) {
+	if p.retireDate == nil {
+		return time.Time{}, false
+	}
+	return *p.retireDate, true
+}
+
+// BalanceNeeded is the balance needed to retire at a given date.
+func (p *RetirementPlan) BalanceNeeded(t time.Time) float32 {
+	deathYear, _, _ := p.DeathDate.Date()
+	currentYear, _, _ := t.Date()
+	diffYear := deathYear - currentYear
+	return float32(diffYear) * p.YearlyExpenses
 }
 
 // NewAccount adds a new account to the portfolio.

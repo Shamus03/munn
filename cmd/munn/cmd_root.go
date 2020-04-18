@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,12 +13,21 @@ import (
 	chart "github.com/wcharczuk/go-chart"
 )
 
+var retirementPlan retirementPlanFlag
+
 func init() {
+	setupRootCmd()
+}
+
+func setupRootCmd() {
 	rootCmd.Flags().IntP("years", "y", 3, "Number of years to project")
 	rootCmd.Flags().BoolP("image", "i", false, "Generate an image")
 	rootCmd.Flags().BoolP("stats", "s", false, "Print stats for the portfolio")
 	rootCmd.Flags().BoolP("debug", "d", false, "Debug account changes")
 	rootCmd.Flags().BoolP("watch", "w", false, "Watch input file")
+	retirementPlan.RetirementPlan = nil
+	rootCmd.Flags().VarP(&retirementPlan, "retire", "r", "Use a retirement plan")
+	rootCmd.SetOut(os.Stdout)
 }
 
 var rootCmd = &cobra.Command{
@@ -45,10 +53,14 @@ var rootCmd = &cobra.Command{
 			}
 			p.Debug = debug
 
+			if retirementPlan.RetirementPlan != nil {
+				p.RetirementPlan = retirementPlan.RetirementPlan
+			}
+
 			recs := p.Project(years)
 
 			if stats {
-				fmt.Println(p.Stats())
+				cmd.Println(p.Stats())
 			}
 
 			if image {
@@ -62,10 +74,19 @@ var rootCmd = &cobra.Command{
 				if err := p.Chart(recs).Render(chart.PNG, f); err != nil {
 					return err
 				}
-				fmt.Printf("Wrote image to %s\n", name)
+				cmd.Printf("Wrote image to %s\n", name)
 			} else {
 				for _, r := range recs {
-					fmt.Printf("%s\t%s\t%.2f\n", r.Time.Format("2006-01-02"), r.AccountName, r.Balance)
+					cmd.Printf("%s\t%s\t%.2f\n", r.Time.Format("2006-01-02"), r.AccountName, r.Balance)
+				}
+			}
+
+			if retirementPlan.RetirementPlan != nil {
+				date, ok := retirementPlan.RetirementPlan.RetireDate()
+				if ok {
+					cmd.Printf("Retirement date: %s\n", date.Format("2006-01-02"))
+				} else {
+					cmd.Printf("Retirement date: could not find\n")
 				}
 			}
 
@@ -84,14 +105,14 @@ var rootCmd = &cobra.Command{
 
 			go func() {
 				for {
-					fmt.Println("Watching for changes...")
+					cmd.Println("Watching for changes...")
 					select {
 					case <-w.Event:
 						if err := run(); err != nil {
-							fmt.Println(err)
+							cmd.Println(err)
 						}
 					case err := <-w.Error:
-						fmt.Println(err)
+						cmd.Println(err)
 					case <-w.Closed:
 						return
 					}

@@ -15,7 +15,6 @@ type ProjectionRecord struct {
 // Project a portfolio's balances for a period of time.
 func (p *Portfolio) Project(years int) []ProjectionRecord {
 	// Apply all manual adjustments to get past data
-
 	manGrp := make(map[time.Time][]*ManualAdjustment)
 	var manTimes []time.Time
 	for _, adj := range p.ManualAdjustments {
@@ -46,6 +45,13 @@ func (p *Portfolio) Project(years int) []ProjectionRecord {
 				Balance:     acc.Balance,
 			})
 		}
+
+		if p.RetirementPlan != nil && p.RetirementPlan.retireDate == nil {
+			if p.TotalBalance() > p.RetirementPlan.BalanceNeeded(now) {
+				rd := now
+				p.RetirementPlan.retireDate = &rd
+			}
+		}
 	}
 
 	for _, t := range manTimes {
@@ -68,7 +74,7 @@ func (p *Portfolio) Project(years int) []ProjectionRecord {
 		}
 	}
 
-	for ; now.Before(to); now = now.AddDate(0, 0, 1) {
+	for ; !now.After(to); now = now.AddDate(0, 0, 1) {
 		var changed bool
 
 		for _, acc := range p.Accounts {
