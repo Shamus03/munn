@@ -1,10 +1,11 @@
 package munn
 
 import (
-	"fmt"
 	"time"
 
 	chart "github.com/wcharczuk/go-chart"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 // Chart generates a chart for the projection.
@@ -46,7 +47,8 @@ func (p Portfolio) Chart(recs []ProjectionRecord) chart.Chart {
 				if n == 0 {
 					return "0"
 				}
-				return fmt.Sprintf("%.0fk", n/1000)
+				p := message.NewPrinter(language.English)
+				return p.Sprintf("%.0fk", n/1000)
 			},
 		},
 	}
