@@ -143,7 +143,7 @@ func (t *Transaction) Apply(now time.Time) bool {
 	if t.Start != nil && now.Before(*t.Start) {
 		return false
 	}
-	if t.Stop != nil && now.After(*t.Stop) {
+	if t.Stop != nil && !now.Before(*t.Stop) {
 		return false
 	}
 	if !t.Schedule.ShouldApply(now) {
