@@ -150,11 +150,17 @@ func (t *Transaction) Apply(now time.Time) bool {
 		return false
 	}
 
-	// If either account is nil, the transaction represents money in/out of the overall portfolio
-	if t.FromAccount != nil {
+	// Don't allow transferring money we don't have - still allow expenses (no "to" account)
+	if t.FromAccount != nil && t.ToAccount != nil {
+		if t.Amount <= t.FromAccount.Balance {
+			t.ToAccount.Balance += t.Amount
+			t.FromAccount.Balance -= t.Amount
+		}
+	} else if t.FromAccount != nil {
+		// Represents an expense (money "out of" the portfolio)
 		t.FromAccount.Balance -= t.Amount
-	}
-	if t.ToAccount != nil {
+	} else if t.ToAccount != nil {
+		// Represents income (money "into" the portfolio)
 		t.ToAccount.Balance += t.Amount
 	}
 
