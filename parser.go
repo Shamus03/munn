@@ -101,7 +101,7 @@ func Parse(r io.Reader) (*Portfolio, error) {
 		if trans.Amount == nil {
 			return nil, fmt.Errorf("transaction '%s' missing amount", trans.Description)
 		}
-		p.NewTransaction(from, to, trans.Description, trans.Schedule.parsed, *trans.Amount)
+		p.NewTransaction(from, to, trans.Description, trans.Schedule.parsed, (*time.Time)(trans.Start), (*time.Time)(trans.Stop), *trans.Amount)
 	}
 
 	return p, nil
@@ -124,6 +124,8 @@ type portfolioSpec struct {
 		Description string       `yaml:"description"`
 		Amount      *float32     `yaml:"amount"`
 		Schedule    jsonSchedule `yaml:"schedule"`
+		Start       *laxTime     `yaml:"start"`
+		Stop        *laxTime     `yaml:"stop"`
 	} `yaml:"transactions"`
 }
 

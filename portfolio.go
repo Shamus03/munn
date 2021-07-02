@@ -79,7 +79,7 @@ func (p *Portfolio) NewManualAdjustment(acc *Account, t time.Time, balance float
 }
 
 // NewTransaction adds a new transaction to the portfolio.
-func (p *Portfolio) NewTransaction(from, to *Account, desc string, s Schedule, amt float32) *Transaction {
+func (p *Portfolio) NewTransaction(from, to *Account, desc string, s Schedule, start, stop *time.Time, amt float32) *Transaction {
 	t := &Transaction{
 		Description: desc,
 		Portfolio:   p,
@@ -87,6 +87,8 @@ func (p *Portfolio) NewTransaction(from, to *Account, desc string, s Schedule, a
 		FromAccount: from,
 		ToAccount:   to,
 		Amount:      amt,
+		Start:       start,
+		Stop:        stop,
 	}
 	p.Transactions = append(p.Transactions, t)
 	return t
@@ -132,10 +134,18 @@ type Transaction struct {
 	FromAccount *Account
 	ToAccount   *Account
 	Amount      float32
+	Start       *time.Time
+	Stop        *time.Time
 }
 
 // Apply the transaction.
 func (t *Transaction) Apply(now time.Time) bool {
+	if t.Start != nil && now.Before(*t.Start) {
+		return false
+	}
+	if t.Stop != nil && now.After(*t.Stop) {
+		return false
+	}
 	if !t.Schedule.ShouldApply(now) {
 		return false
 	}
