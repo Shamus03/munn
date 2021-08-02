@@ -1,7 +1,0 @@
-os: linux
-language: go
-go:
-- 1.16.x
-notifications:
-  email:
-    on_failure: always

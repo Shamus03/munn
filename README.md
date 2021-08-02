@@ -1,5 +1,5 @@
 # munn
-[![Build Status](https://travis-ci.com/Shamus03/munn.svg?branch=master)](https://travis-ci.com/Shamus03/munn)
+[![Build](https://github.com/Shamus03/munn/actions/workflows/build.yml/badge.svg)](https://github.com/Shamus03/munn/actions/workflows/build.yml)
 
 CLI tool to project financial portfolio value.
 
