@@ -1,0 +1,15 @@
+---
+plugins:
+- "@semantic-release/commit-analyzer"
+- "@semantic-release/release-notes-generator"
+- - "@semantic-release/exec"
+  - prepareCmd: |
+      ld_flags="-X 'main.Version=${nextRelease.gitTag}' -X 'main.BuildTime=$(TZ=UTC date --iso-8601=seconds)'"
+      GOOS="linux" GOARCH="amd64" go build -o="bin/munn.linux.amd64" -ldflags="$ld_flags" ./cmd/munn
+      GOOS="windows" GOARCH="amd64" go build -o="bin/munn.windows.amd64.exe" -ldflags="$ld_flags" ./cmd/munn
+- - "@semantic-release/github"
+  - assets:
+    - path: bin/munn.linux.amd64
+      label: Binary - Linux AMD64
+    - path: bin/munn.windows.amd64.exe
+      label: Binary - Windows AMD64

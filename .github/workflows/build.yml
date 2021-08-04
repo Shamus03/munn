@@ -8,18 +8,75 @@ on:
 
 jobs:
 
-  build:
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
 
-    - name: Set up Go
+    steps:
+    - name: Install Go
       uses: actions/setup-go@v2
       with:
         go-version: 1.16
 
-    - name: Build
-      run: go build -v ./...
+    - uses: actions/checkout@v2
+
+    - name: Cache go modules
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+          ~/Library/Caches/go-build
+          %LocalAppData%\go-build
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
 
     - name: Test
       run: go test -v ./...
+
+  release:
+    name: 'Release to GitHub'
+    runs-on: ubuntu-latest
+
+    needs: [test]
+    if: ${{ github.ref == 'refs/heads/master' }}
+
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.16
+        
+    - name: Install Node
+      uses: actions/setup-node@v2
+      with:
+        node-version: 14
+
+    - uses: actions/checkout@v2
+
+    - name: Cache go modules
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+          ~/Library/Caches/go-build
+          %LocalAppData%\go-build
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Cache node modules
+      uses: actions/cache@v2
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node
+
+    - name: Install semantic-release
+      run: npm install -g semantic-release @semantic-release/exec
+
+    - name: Release to GitHub
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: semantic-release
