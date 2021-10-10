@@ -79,14 +79,30 @@ func Parse(r io.Reader) (*Portfolio, error) {
 	}
 
 	for _, trans := range spec.Transactions {
-		var from *Account
+		var from []*Account
 		var to *Account
-		if trans.FromAccount != 0 {
-			var ok bool
-			from, ok = accountsMap[trans.FromAccount]
+		var fromAccounts []int
+		switch a := trans.FromAccount.(type) {
+		case nil:
+		case int:
+			fromAccounts = []int{a}
+		case []interface{}:
+			for _, v := range a {
+				a, ok := v.(int)
+				if !ok {
+					return nil, fmt.Errorf("invalid fromAccount: %v", trans.FromAccount)
+				}
+				fromAccounts = append(fromAccounts, a)
+			}
+		default:
+			return nil, fmt.Errorf("invalid fromAccount: %v", trans.FromAccount)
+		}
+		for _, a := range fromAccounts {
+			acc, ok := accountsMap[a]
 			if !ok {
 				return nil, fmt.Errorf("invalid account: %d", trans.FromAccount)
 			}
+			from = append(from, acc)
 		}
 		if trans.ToAccount != 0 {
 			var ok bool
@@ -119,7 +135,7 @@ type portfolioSpec struct {
 		Balance *float32 `yaml:"balance"`
 	} `yaml:"manualAdjustments"`
 	Transactions []struct {
-		FromAccount int          `yaml:"fromAccount"`
+		FromAccount interface{}  `yaml:"fromAccount"`
 		ToAccount   int          `yaml:"toAccount"`
 		Description string       `yaml:"description"`
 		Amount      *float32     `yaml:"amount"`

@@ -9,7 +9,7 @@ func (p *Portfolio) Stats() PortfolioStats {
 	for _, t := range p.Transactions {
 		if t.ToAccount == nil {
 			yearlyExpenses += t.Amount * t.Schedule.YearlyFactor()
-		} else if t.FromAccount == nil {
+		} else if len(t.FromAccounts) > 0 {
 			yearlyIncome += t.Amount * t.Schedule.YearlyFactor()
 		}
 	}

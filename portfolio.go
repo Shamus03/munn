@@ -79,16 +79,16 @@ func (p *Portfolio) NewManualAdjustment(acc *Account, t time.Time, balance float
 }
 
 // NewTransaction adds a new transaction to the portfolio.
-func (p *Portfolio) NewTransaction(from, to *Account, desc string, s Schedule, start, stop *time.Time, amt float32) *Transaction {
+func (p *Portfolio) NewTransaction(from []*Account, to *Account, desc string, s Schedule, start, stop *time.Time, amt float32) *Transaction {
 	t := &Transaction{
-		Description: desc,
-		Portfolio:   p,
-		Schedule:    s,
-		FromAccount: from,
-		ToAccount:   to,
-		Amount:      amt,
-		Start:       start,
-		Stop:        stop,
+		Description:  desc,
+		Portfolio:    p,
+		Schedule:     s,
+		FromAccounts: from,
+		ToAccount:    to,
+		Amount:       amt,
+		Start:        start,
+		Stop:         stop,
 	}
 	p.Transactions = append(p.Transactions, t)
 	return t
@@ -128,14 +128,14 @@ func (a *ManualAdjustment) Apply(now time.Time) bool {
 // If FromAccount or ToAccount is nil, this transaction represents money in/out of the portfolio (payments, income, etc.).
 // Otherwise it is a transfer between two accounts in the portfolio.
 type Transaction struct {
-	Description string
-	Portfolio   *Portfolio
-	Schedule    Schedule
-	FromAccount *Account
-	ToAccount   *Account
-	Amount      float32
-	Start       *time.Time
-	Stop        *time.Time
+	Description  string
+	Portfolio    *Portfolio
+	Schedule     Schedule
+	FromAccounts []*Account
+	ToAccount    *Account
+	Amount       float32
+	Start        *time.Time
+	Stop         *time.Time
 }
 
 // Apply the transaction.
@@ -151,14 +151,36 @@ func (t *Transaction) Apply(now time.Time) bool {
 	}
 
 	// Don't allow transferring money we don't have - still allow expenses (no "to" account)
-	if t.FromAccount != nil && t.ToAccount != nil {
-		if t.Amount <= t.FromAccount.Balance {
-			t.ToAccount.Balance += t.Amount
-			t.FromAccount.Balance -= t.Amount
+	if len(t.FromAccounts) > 0 && t.ToAccount != nil {
+		amt := t.Amount
+		for _, a := range t.FromAccounts {
+			if a.Balance < amt {
+				// Keep zeroing out accounts in order until we find one with a remaining balance
+				amt -= a.Balance
+				a.Balance = 0
+				continue
+			}
+			if amt <= a.Balance {
+				t.ToAccount.Balance += amt
+				a.Balance -= amt
+			}
+			break
 		}
-	} else if t.FromAccount != nil {
+	} else if len(t.FromAccounts) > 0 {
 		// Represents an expense (money "out of" the portfolio)
-		t.FromAccount.Balance -= t.Amount
+		amt := t.Amount
+		for _, a := range t.FromAccounts {
+			if a.Balance < amt {
+				// Keep zeroing out accounts in order until we find one with a remaining balance
+				amt -= a.Balance
+				a.Balance = 0
+				continue
+			}
+			if a.Balance >= amt {
+				a.Balance -= amt
+			}
+			break
+		}
 	} else if t.ToAccount != nil {
 		// Represents income (money "into" the portfolio)
 		t.ToAccount.Balance += t.Amount
