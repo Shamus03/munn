@@ -81,6 +81,8 @@ var rootCmd = &cobra.Command{
 				}
 			}
 
+			cmd.Printf("Final Balance: %11.2f\n", p.TotalBalance())
+
 			if retirementPlan.RetirementPlan != nil {
 				date, ok := retirementPlan.RetirementPlan.RetireDate()
 				if ok {
