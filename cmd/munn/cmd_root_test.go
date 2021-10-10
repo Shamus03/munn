@@ -47,7 +47,8 @@ func (s *rootCmdSuite) Test_Example_Years() {
 
 	if assert.NotEmpty(lines) {
 		firstYear, _ := strconv.Atoi(strings.Split(lines[0], "-")[0])
-		lastYear, _ := strconv.Atoi(strings.Split(lines[len(lines)-1], "-")[0])
+		// Get the second-to-last line, since the final line will be the final balance
+		lastYear, _ := strconv.Atoi(strings.Split(lines[len(lines)-2], "-")[0])
 		assert.Equal(100, lastYear-firstYear, lines[0])
 	}
 }
@@ -68,7 +69,8 @@ func (s *rootCmdSuite) Test_Example_Retire_Years() {
 
 	if assert.NotEmpty(lines) {
 		firstYear, _ := strconv.Atoi(strings.Split(lines[0], "-")[0])
-		lastYear, _ := strconv.Atoi(strings.Split(lines[len(lines)-2], "-")[0])
+		// Get the thjrd-to-last line, since the last two lines are retirement info and final balance
+		lastYear, _ := strconv.Atoi(strings.Split(lines[len(lines)-3], "-")[0])
 		assert.Equal(100, lastYear-firstYear, lines[0])
 
 		lastLine := strings.Split(lines[len(lines)-1], ": ")
