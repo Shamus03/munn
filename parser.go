@@ -53,6 +53,13 @@ func Parse(r io.Reader) (*Portfolio, error) {
 
 	p := &Portfolio{}
 
+	if spec.YearsToProject != nil {
+		if *spec.YearsToProject <= 0 {
+			return nil, fmt.Errorf("yearsToProject must be positive")
+		}
+		p.YearsToProject = spec.YearsToProject
+	}
+
 	accountsMap := make(map[int]*Account)
 
 	for _, accSpec := range spec.Accounts {
@@ -124,7 +131,8 @@ func Parse(r io.Reader) (*Portfolio, error) {
 }
 
 type portfolioSpec struct {
-	Accounts []struct {
+	YearsToProject *int `yaml:"yearsToProject"`
+	Accounts       []struct {
 		ID                 int     `yaml:"id"`
 		Name               string  `yaml:"name"`
 		AnnualInterestRate float32 `yaml:"annualInterestRate"`

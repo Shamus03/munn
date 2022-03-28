@@ -20,7 +20,7 @@ func init() {
 }
 
 func setupRootCmd() {
-	rootCmd.Flags().IntP("years", "y", 3, "Number of years to project")
+	rootCmd.Flags().IntP("years", "y", 0, "Number of years to project (default 3 if not specified as a flag or in .munn file)")
 	rootCmd.Flags().BoolP("image", "i", false, "Generate an image")
 	rootCmd.Flags().BoolP("stats", "s", false, "Print stats for the portfolio")
 	rootCmd.Flags().BoolP("debug", "d", false, "Debug account changes")
@@ -34,7 +34,7 @@ var rootCmd = &cobra.Command{
 	Use:  "munn",
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		years, _ := cmd.Flags().GetInt("years")
+		flagYears, _ := cmd.Flags().GetInt("years")
 		image, _ := cmd.Flags().GetBool("image")
 		stats, _ := cmd.Flags().GetBool("stats")
 		debug, _ := cmd.Flags().GetBool("debug")
@@ -52,6 +52,15 @@ var rootCmd = &cobra.Command{
 				return err
 			}
 			p.Debug = debug
+
+			var years int
+			if flagYears != 0 {
+				years = flagYears
+			} else if p.YearsToProject != nil {
+				years = *p.YearsToProject
+			} else {
+				years = 3
+			}
 
 			if retirementPlan.RetirementPlan != nil {
 				p.RetirementPlan = retirementPlan.RetirementPlan

@@ -6,6 +6,7 @@ import (
 
 // Portfolio represents a person's financial portfolio.
 type Portfolio struct {
+	YearsToProject    *int
 	Accounts          []*Account
 	Transactions      []*Transaction
 	ManualAdjustments []*ManualAdjustment
