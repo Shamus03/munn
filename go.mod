@@ -11,6 +11,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/wcharczuk/go-chart v2.0.2-0.20191206192251-962b9abdec2b+incompatible
 	golang.org/x/image v0.0.0-20191206065243-da761ea9ff43 // indirect
-	golang.org/x/text v0.3.5
+	golang.org/x/text v0.3.8
 	gopkg.in/yaml.v2 v2.4.0
 )
